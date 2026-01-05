@@ -1,0 +1,19 @@
+# Visual Studio / Jetbrains Rider 生成的工程文件
+.vs/
+.idea/
+*.sln
+*.suo
+*.opensdf
+*.sdf
+
+# UE5 编译生成的中间文件 (这部分体积最大，绝对不要传)
+Binaries/
+Intermediate/
+DerivedDataCache/
+Saved/
+Build/
+
+# 其它杂项
+*.pdb
+*.obj
+.gradle/
