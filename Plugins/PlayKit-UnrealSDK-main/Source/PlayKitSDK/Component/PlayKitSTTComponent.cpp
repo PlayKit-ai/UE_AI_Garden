@@ -16,7 +16,7 @@ FString UPlayKitSTTComponent::GetTranscriptionUrl() const
 	{
 		return FString::Printf(TEXT("%s/ai/%s/v2/audio/transcriptions"), *Settings->GetBaseUrl(), *Settings->GameId);
 	}
-	return TEXT("https://playkit.ai/ai/v2/audio/transcriptions");
+	return TEXT("https://api.playkit.ai/ai/v2/audio/transcriptions");
 }
 
 FString UPlayKitSTTComponent::GetAuthToken() const
@@ -50,7 +50,22 @@ UPlayKitSTTComponent::UPlayKitSTTComponent()
 void UPlayKitSTTComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	UE_LOG(LogTemp, Log, TEXT("[STT] BeginPlay"));
+
+	// Load default model from settings if not set
+	if (ModelName.IsEmpty())
+	{
+		UPlayKitSettings* Settings = UPlayKitSettings::Get();
+		if (Settings && !Settings->DefaultTranscriptionModel.IsEmpty())
+		{
+			ModelName = Settings->DefaultTranscriptionModel;
+		}
+		else
+		{
+			ModelName = TEXT("default-transcription-model");
+		}
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("[STT] BeginPlay - Model: %s"), *ModelName);
 }
 
 void UPlayKitSTTComponent::StartRecording()
@@ -108,7 +123,7 @@ void UPlayKitSTTComponent::StopRecording()
 	UE_LOG(LogTemp, Log, TEXT("[STT] Recording saved: %s (exists=%s)"), *LastSavedFilePath, bFileExists ? TEXT("true") : TEXT("false"));
 }
 
-void UPlayKitSTTComponent::StartTranscription(const FString& AuthToken, const FPlayKitTranscriptionRequest& Request)
+void UPlayKitSTTComponent::StartTranscription(const FPlayKitTranscriptionRequest& Request)
 {
 	UE_LOG(LogTemp, Log, TEXT("[STT] StartTranscription called, LastSavedFilePath=%s"), *LastSavedFilePath);
 	if (LastSavedFilePath.IsEmpty() || !IFileManager::Get().FileExists(*LastSavedFilePath))
@@ -117,51 +132,17 @@ void UPlayKitSTTComponent::StartTranscription(const FString& AuthToken, const FP
 		OnPlayKitTranscriptionError.Broadcast(TEXT("Recording file not ready"), TEXT("FILE_NOT_READY"));
 		return;
 	}
-	UploadRecordingJson(AuthToken, Request);
+	UploadRecordingJson(Request);
 }
 
-void UPlayKitSTTComponent::UploadRecordingBinary(const FString& AuthToken)
+void UPlayKitSTTComponent::StartTranscriptionSimple()
 {
-	if (LastSavedFilePath.IsEmpty())
-	{
-		OnPlayKitTranscriptionError.Broadcast(TEXT("No recording file"), TEXT("NO_FILE"));
-		UE_LOG(LogTemp, Error, TEXT("[STT] UploadRecordingBinary: LastSavedFilePath is empty"));
-		return;
-	}
-
-	TArray<uint8> FileData;
-	if (!FFileHelper::LoadFileToArray(FileData, *LastSavedFilePath))
-	{
-		OnPlayKitTranscriptionError.Broadcast(TEXT("Load file failed"), TEXT("LOAD_FAILED"));
-		UE_LOG(LogTemp, Error, TEXT("[STT] UploadRecordingBinary: Load file failed: %s"), *LastSavedFilePath);
-		return;
-	}
-	UE_LOG(LogTemp, Log, TEXT("[STT] UploadRecordingBinary: Read %d bytes from %s"), FileData.Num(), *LastSavedFilePath);
-	{
-		FString B64 = FBase64::Encode(FileData);
-		const int32 MaxLogLen = 8192;
-		const FString Head = B64.Left(MaxLogLen);
-		UE_LOG(LogTemp, Log, TEXT("[STT] WAV base64 length=%d"), B64.Len());
-		UE_LOG(LogTemp, Log, TEXT("[STT] WAV base64 (head %d): %s"), MaxLogLen, *Head);
-	}
-
-	const FString Url = GetTranscriptionUrl();
-	CurrentHttpRequest = FHttpModule::Get().CreateRequest();
-	CurrentHttpRequest->SetURL(Url);
-	CurrentHttpRequest->SetVerb(TEXT("POST"));
-
-	const FString Authorization = "Bearer " + AuthToken;
-	CurrentHttpRequest->SetHeader(TEXT("Content-Type"), TEXT("audio/wav"));
-	CurrentHttpRequest->SetHeader(TEXT("Authorization"), Authorization);
-
-	CurrentHttpRequest->SetContent(FileData);
-
-	CurrentHttpRequest->OnProcessRequestComplete().BindUObject(this, &UPlayKitSTTComponent::HandleTranscriptionResponse);
-	UE_LOG(LogTemp, Log, TEXT("[STT] UploadRecordingBinary: Request sent to %s"), *Url);
-	CurrentHttpRequest->ProcessRequest();
+	FPlayKitTranscriptionRequest Request;
+	// Model will use component's ModelName (set in BeginPlay or editor)
+	StartTranscription(Request);
 }
 
-void UPlayKitSTTComponent::UploadRecordingJson(const FString& AuthToken, const FPlayKitTranscriptionRequest& Request)
+void UPlayKitSTTComponent::UploadRecordingJson(const FPlayKitTranscriptionRequest& Request)
 {
 	if (LastSavedFilePath.IsEmpty())
 	{
@@ -176,7 +157,8 @@ void UPlayKitSTTComponent::UploadRecordingJson(const FString& AuthToken, const F
 		UE_LOG(LogTemp, Error, TEXT("[STT] UploadRecordingJson: Load file failed: %s"), *LastSavedFilePath);
 		return;
 	}
-	FString Model = Request.model.IsEmpty() ? TEXT("whisper-large") : Request.model;
+	// Use Request.model if provided, otherwise use component's ModelName
+	FString Model = Request.model.IsEmpty() ? ModelName : Request.model;
 	FString Lang = Request.language.IsEmpty() ? TEXT("en") : Request.language;
 	FString Prompt = Request.prompt;
 	FString AudioB64 = FBase64::Encode(FileData);
@@ -187,13 +169,22 @@ void UPlayKitSTTComponent::UploadRecordingJson(const FString& AuthToken, const F
 	JsonObject->SetStringField(TEXT("prompt"), Prompt);
 	const FString JsonString = UPlayKitTool::JsonObjectToString(JsonObject);
 	UE_LOG(LogTemp, Log, TEXT("[STT] Request JSON:\n%s"), *UPlayKitTool::JsonObjectToString(JsonObject, true));
+
+	// Get auth token automatically (same as other clients)
+	const FString AuthToken = GetAuthToken();
+	if (AuthToken.IsEmpty())
+	{
+		OnPlayKitTranscriptionError.Broadcast(TEXT("Not authenticated"), TEXT("NOT_AUTHENTICATED"));
+		UE_LOG(LogTemp, Error, TEXT("[STT] UploadRecordingJson: No auth token available"));
+		return;
+	}
+
 	const FString Url = GetTranscriptionUrl();
 	CurrentHttpRequest = FHttpModule::Get().CreateRequest();
 	CurrentHttpRequest->SetURL(Url);
 	CurrentHttpRequest->SetVerb(TEXT("POST"));
-	const FString Authorization = "Bearer " + AuthToken;
 	CurrentHttpRequest->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
-	CurrentHttpRequest->SetHeader(TEXT("Authorization"), Authorization);
+	CurrentHttpRequest->SetHeader(TEXT("Authorization"), FString::Printf(TEXT("Bearer %s"), *AuthToken));
 	CurrentHttpRequest->SetContentAsString(JsonString);
 	CurrentHttpRequest->OnProcessRequestComplete().BindUObject(this, &UPlayKitSTTComponent::HandleTranscriptionResponse);
 	UE_LOG(LogTemp, Log, TEXT("[STT] UploadRecordingJson: Request sent to %s"), *Url);

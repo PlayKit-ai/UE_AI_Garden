@@ -18,9 +18,18 @@ void UPlayKitSTTClient::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// Use settings default if model not specified
 	if (ModelName.IsEmpty())
 	{
-		ModelName = TEXT("whisper-large");
+		UPlayKitSettings* Settings = UPlayKitSettings::Get();
+		if (Settings && !Settings->DefaultTranscriptionModel.IsEmpty())
+		{
+			ModelName = Settings->DefaultTranscriptionModel;
+		}
+		else
+		{
+			ModelName = TEXT("default-transcription-model");
+		}
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("[PlayKit] STTClient component initialized with model: %s"), *ModelName);

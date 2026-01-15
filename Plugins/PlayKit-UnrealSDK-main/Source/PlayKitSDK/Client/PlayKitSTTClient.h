@@ -39,9 +39,9 @@ protected:
 public:
 	//========== Configuration Properties (Edit in Details Panel) ==========//
 
-	/** The AI model to use for transcription */
+	/** The AI model to use for transcription. Leave empty to use default from PlayKitSettings. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="PlayKit|STT")
-	FString ModelName = TEXT("whisper-large");
+	FString ModelName;
 
 	/** Default language hint for transcription (e.g., "en", "zh", "ja") */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="PlayKit|STT")

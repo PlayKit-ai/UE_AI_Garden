@@ -49,7 +49,7 @@ void UPlayKitNPCClient::SetModel(const FString& ModelName)
 FString UPlayKitNPCClient::GetBaseUrl() const
 {
 	UPlayKitSettings* Settings = UPlayKitSettings::Get();
-	return Settings ? Settings->GetBaseUrl() : TEXT("https://playkit.ai");
+	return Settings ? Settings->GetBaseUrl() : TEXT("https://api.playkit.ai");
 }
 
 FString UPlayKitNPCClient::GetGameId() const

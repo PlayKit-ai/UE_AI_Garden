@@ -125,6 +125,11 @@ void UPlayKitImageClient::SendImageRequest(const FString& Prompt, const FPlayKit
 	{
 		RequestBody->SetNumberField(TEXT("seed"), Options.Seed);
 	}
+	
+	if (Options.bTransparent)
+	{
+		RequestBody->SetBoolField(TEXT("transparent"), true);
+	}
 
 	// Serialize
 	FString RequestBodyStr;
@@ -188,6 +193,8 @@ void UPlayKitImageClient::HandleImageResponse(FHttpRequestPtr Request, FHttpResp
 
 				DataObj->TryGetStringField(TEXT("b64_json"), Image.ImageBase64);
 				DataObj->TryGetStringField(TEXT("revised_prompt"), Image.RevisedPrompt);
+				DataObj->TryGetStringField(TEXT("b64_json_original"), Image.OriginalImageBase64);
+				DataObj->TryGetBoolField(TEXT("transparent_success"), Image.bTransparentSuccess);
 
 				Results.Add(Image);
 			}

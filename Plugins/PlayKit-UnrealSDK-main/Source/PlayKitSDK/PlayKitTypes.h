@@ -117,7 +117,7 @@ struct PLAYKITSDK_API FPlayKitGeneratedImage
 	UPROPERTY(BlueprintReadOnly, Category="PlayKit")
 	bool bSuccess = false;
 
-	/** Base64 encoded image data */
+	/** Base64 encoded image data (background removed if bTransparent=true and successful) */
 	UPROPERTY(BlueprintReadOnly, Category="PlayKit")
 	FString ImageBase64;
 
@@ -135,6 +135,14 @@ struct PLAYKITSDK_API FPlayKitGeneratedImage
 
 	UPROPERTY(BlueprintReadOnly, Category="PlayKit")
 	FString ErrorMessage;
+	
+	/** Original image before background removal (only present when bTransparent=true) */
+	UPROPERTY(BlueprintReadOnly, Category="PlayKit")
+	FString OriginalImageBase64;
+	
+	/** Whether background removal was successful (only valid when bTransparent=true was requested) */
+	UPROPERTY(BlueprintReadOnly, Category="PlayKit")
+	bool bTransparentSuccess = false;
 };
 
 /**
@@ -156,6 +164,10 @@ struct PLAYKITSDK_API FPlayKitImageOptions
 	/** Optional seed for reproducible results */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="PlayKit")
 	int32 Seed = -1; // -1 = no seed
+	
+	/** If true, automatically remove background from generated images */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="PlayKit")
+	bool bTransparent = false;
 };
 
 //========== Transcription Types ==========//

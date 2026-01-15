@@ -79,10 +79,14 @@ private:
 	TArray<TSharedPtr<FString>> GameOptions;
 	TArray<TSharedPtr<FString>> ChatModelOptions;
 	TArray<TSharedPtr<FString>> ImageModelOptions;
+	TArray<TSharedPtr<FString>> TranscriptionModelOptions;
+	TArray<TSharedPtr<FString>> Model3DOptions;
 
 	// Selected items (for combo box display)
 	TSharedPtr<FString> SelectedChatModel;
 	TSharedPtr<FString> SelectedImageModel;
+	TSharedPtr<FString> SelectedTranscriptionModel;
+	TSharedPtr<FString> Selected3DModel;
 
 	// UI Widgets
 	TSharedPtr<STextBlock> LoginStatusText;
@@ -92,6 +96,8 @@ private:
 	TSharedPtr<SComboBox<TSharedPtr<FString>>> GameComboBox;
 	TSharedPtr<SComboBox<TSharedPtr<FString>>> ChatModelComboBox;
 	TSharedPtr<SComboBox<TSharedPtr<FString>>> ImageModelComboBox;
+	TSharedPtr<SComboBox<TSharedPtr<FString>>> TranscriptionModelComboBox;
+	TSharedPtr<SComboBox<TSharedPtr<FString>>> Model3DComboBox;
 	TSharedPtr<SVerticalBox> GameSection;
 	TSharedPtr<SVerticalBox> ModelsSection;
 };

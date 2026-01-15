@@ -61,8 +61,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category="PlayKit|STT")
 	void StopRecording();
 
+	/** Start transcription with custom request options */
 	UFUNCTION(BlueprintCallable, Category="PlayKit|STT")
-	void StartTranscription(const FString& AuthToken, const FPlayKitTranscriptionRequest& Request);
+	void StartTranscription(const FPlayKitTranscriptionRequest& Request);
+
+	/** Start transcription with default options (uses component's ModelName) */
+	UFUNCTION(BlueprintCallable, Category="PlayKit|STT")
+	void StartTranscriptionSimple();
 
 	UFUNCTION(BlueprintPure, Category="PlayKit|STT")
 	FString GetLastSavedFilePath() const { return LastSavedFilePath; }
@@ -74,9 +79,16 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "PlayKit|STT|Delegate")
 	FPlayKitTranscriptionErrorDelegate OnPlayKitTranscriptionError;
 
+public:
+	//========== Configuration Properties (Edit in Details Panel) ==========//
+
+	/** The AI model to use for transcription */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="PlayKit|STT")
+	FString ModelName;
+
 private:
 	UAudioCaptureComponent* CaptureComponent;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="STT", meta=(AllowPrivateAccess="true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="PlayKit|STT", meta=(AllowPrivateAccess="true"))
 	USoundSubmix* RecordingSubmix = nullptr;
 
 	FString LastSavedFilePath;
@@ -85,7 +97,6 @@ private:
 
 	FString GetTranscriptionUrl() const;
 	FString GetAuthToken() const;
-	void UploadRecordingBinary(const FString& AuthToken);
-	void UploadRecordingJson(const FString& AuthToken, const FPlayKitTranscriptionRequest& Request);
+	void UploadRecordingJson(const FPlayKitTranscriptionRequest& Request);
 	void HandleTranscriptionResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 };

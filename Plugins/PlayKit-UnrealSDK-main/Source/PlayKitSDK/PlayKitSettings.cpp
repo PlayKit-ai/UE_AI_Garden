@@ -14,10 +14,14 @@ UPlayKitSettings::UPlayKitSettings()
 {
 	this->CategoryName = TEXT("Plugins");
 	this->SectionName = TEXT("PlayKit SDK Setting");
+	this->DefaultChatModel = TEXT("gpt-4o");
+	this->DefaultImageModel = TEXT("flux-1-schnell");
+	this->DefaultTranscriptionModel = TEXT("whisper-large");
+	this->Default3DModel = TEXT("tripo-v3");
+	
 	
 	// 配置默认配置
 	CustomBaseUrl = TEXT("https://api.playkit.ai");
-	
 }
 
 UPlayKitSettings* UPlayKitSettings::Get()
@@ -42,11 +46,6 @@ FString UPlayKitSettings::GetAIBaseUrl() const
 bool UPlayKitSettings::HasDeveloperToken() const
 {
 	return !GetDeveloperToken().IsEmpty();
-}
-
-void UPlayKitSettings::SaveSettings()
-{
-	TryUpdateDefaultConfigFile();
 }
 
 FString UPlayKitSettings::GetDeveloperToken() const
@@ -96,6 +95,11 @@ void UPlayKitSettings::SetPlayerToken(const FString& Token)
 void UPlayKitSettings::ClearPlayerToken()
 {
 	SetPlayerToken(FString());
+}
+
+void UPlayKitSettings::SaveSettings()
+{
+	TryUpdateDefaultConfigFile();
 }
 
 #if WITH_EDITOR

@@ -79,5 +79,5 @@ FString UPlayKitBlueprintLibrary::GetGameId()
 FString UPlayKitBlueprintLibrary::GetBaseUrl()
 {
 	UPlayKitSettings* Settings = UPlayKitSettings::Get();
-	return Settings ? Settings->GetBaseUrl() : TEXT("https://playkit.ai");
+	return Settings ? Settings->GetBaseUrl() : TEXT("https://api.playkit.ai");
 }

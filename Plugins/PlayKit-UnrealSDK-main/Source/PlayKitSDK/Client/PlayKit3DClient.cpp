@@ -22,10 +22,13 @@ void UPlayKit3DClient::BeginPlay()
 	if (ModelName.IsEmpty())
 	{
 		UPlayKitSettings* Settings = UPlayKitSettings::Get();
-		if (Settings)
+		if (Settings && !Settings->Default3DModel.IsEmpty())
 		{
-			// Settings doesn't have Default3DModel, use hardcoded default
-			ModelName = TEXT("tripo-3d");
+			ModelName = Settings->Default3DModel;
+		}
+		else
+		{
+			ModelName = TEXT("default-3d-model");
 		}
 	}
 

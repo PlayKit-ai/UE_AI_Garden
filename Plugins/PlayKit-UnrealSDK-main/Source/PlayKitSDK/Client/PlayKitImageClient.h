@@ -42,7 +42,7 @@ public:
 
 	/** The AI model to use for image generation */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="PlayKit|Image")
-	FString ModelName = TEXT("dall-e-3");
+	FString ModelName = TEXT("default-image");
 
 	/** Default image size (e.g., "1024x1024", "1792x1024", "1024x1792") */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="PlayKit|Image")

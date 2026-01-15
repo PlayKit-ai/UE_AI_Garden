@@ -41,7 +41,7 @@ public:
 
 	/** The AI model to use for chat */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="PlayKit|Chat")
-	FString ModelName = TEXT("gpt-4o-mini");
+	FString ModelName = TEXT("default-chat");
 
 	/** Temperature for response generation (0.0-2.0). Higher = more creative */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="PlayKit|Chat", meta=(ClampMin="0.0", ClampMax="2.0"))

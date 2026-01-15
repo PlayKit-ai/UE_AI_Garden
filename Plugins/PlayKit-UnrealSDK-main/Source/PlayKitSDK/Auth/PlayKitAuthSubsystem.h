@@ -184,7 +184,7 @@ public:
 	FString RequestCodeSessionId;
 
 	UPROPERTY(BlueprintReadOnly, Category="PlayKit|URLs")
-	FString BaseURL = FString("https://playkit.ai");
+	FString BaseURL = FString("https://api.playkit.ai");
 
 	//////////////// Client  ////////////////
 	const FString PlayerTokenSaveFilePath = FPaths::ProjectSavedDir() / TEXT("PlayKit/PlayerToken.dat");

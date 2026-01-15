@@ -161,7 +161,7 @@ private:
 	// Configuration
 	FString GameId;
 	FString Scope;
-	FString BaseUrl = TEXT("https://playkit.ai");
+	FString BaseUrl = TEXT("https://api.playkit.ai");
 
 	// PKCE
 	FString CodeVerifier;

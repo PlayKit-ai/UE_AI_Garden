@@ -47,7 +47,7 @@ public:
 
 	/** The AI model to use for 3D generation */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="PlayKit|3D")
-	FString ModelName = TEXT("tripo-3d");
+	FString ModelName = TEXT("default-3d-model");
 
 	/** Model version (leave empty for latest) */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="PlayKit|3D")

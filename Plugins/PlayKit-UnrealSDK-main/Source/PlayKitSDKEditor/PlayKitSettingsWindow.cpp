@@ -551,6 +551,114 @@ TSharedRef<SWidget> SPlayKitSettingsWindow::BuildModelsSection()
 		]
 	]
 
+	// Transcription Model
+	+ SVerticalBox::Slot()
+	.AutoHeight()
+	.Padding(0, 0, 0, 10)
+	[
+		SNew(SHorizontalBox)
+		+ SHorizontalBox::Slot()
+		.AutoWidth()
+		.VAlign(VAlign_Center)
+		.Padding(0, 0, 10, 0)
+		[
+			SNew(SBox)
+			.WidthOverride(120)
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("TranscriptionModelLabel", "Transcription Model:"))
+			]
+		]
+		+ SHorizontalBox::Slot()
+		.FillWidth(1.0f)
+		[
+			SAssignNew(TranscriptionModelComboBox, SComboBox<TSharedPtr<FString>>)
+			.OptionsSource(&TranscriptionModelOptions)
+			.OnSelectionChanged_Lambda([this](TSharedPtr<FString> NewValue, ESelectInfo::Type SelectInfo)
+			{
+				if (NewValue.IsValid() && Settings)
+				{
+					SelectedTranscriptionModel = NewValue;
+					Settings->DefaultTranscriptionModel = *NewValue;
+					Settings->SaveSettings();
+					UE_LOG(LogTemp, Log, TEXT("[PlayKit] Selected transcription model: %s"), **NewValue);
+				}
+			})
+			.OnGenerateWidget_Lambda([](TSharedPtr<FString> Item)
+			{
+				return SNew(STextBlock).Text(FText::FromString(*Item));
+			})
+			.Content()
+			[
+				SNew(STextBlock)
+				.Text_Lambda([this]()
+				{
+					if (SelectedTranscriptionModel.IsValid())
+					{
+						return FText::FromString(*SelectedTranscriptionModel);
+					}
+					return Settings && !Settings->DefaultTranscriptionModel.IsEmpty()
+						? FText::FromString(Settings->DefaultTranscriptionModel)
+						: LOCTEXT("SelectTranscriptionModel", "Select...");
+				})
+			]
+		]
+	]
+
+	// 3D Model
+	+ SVerticalBox::Slot()
+	.AutoHeight()
+	.Padding(0, 0, 0, 10)
+	[
+		SNew(SHorizontalBox)
+		+ SHorizontalBox::Slot()
+		.AutoWidth()
+		.VAlign(VAlign_Center)
+		.Padding(0, 0, 10, 0)
+		[
+			SNew(SBox)
+			.WidthOverride(120)
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("3DModelLabel", "3D Model:"))
+			]
+		]
+		+ SHorizontalBox::Slot()
+		.FillWidth(1.0f)
+		[
+			SAssignNew(Model3DComboBox, SComboBox<TSharedPtr<FString>>)
+			.OptionsSource(&Model3DOptions)
+			.OnSelectionChanged_Lambda([this](TSharedPtr<FString> NewValue, ESelectInfo::Type SelectInfo)
+			{
+				if (NewValue.IsValid() && Settings)
+				{
+					Selected3DModel = NewValue;
+					Settings->Default3DModel = *NewValue;
+					Settings->SaveSettings();
+					UE_LOG(LogTemp, Log, TEXT("[PlayKit] Selected 3D model: %s"), **NewValue);
+				}
+			})
+			.OnGenerateWidget_Lambda([](TSharedPtr<FString> Item)
+			{
+				return SNew(STextBlock).Text(FText::FromString(*Item));
+			})
+			.Content()
+			[
+				SNew(STextBlock)
+				.Text_Lambda([this]()
+				{
+					if (Selected3DModel.IsValid())
+					{
+						return FText::FromString(*Selected3DModel);
+					}
+					return Settings && !Settings->Default3DModel.IsEmpty()
+						? FText::FromString(Settings->Default3DModel)
+						: LOCTEXT("Select3DModel", "Select...");
+				})
+			]
+		]
+	]
+
 	// Separator
 	+ SVerticalBox::Slot()
 	.AutoHeight()
@@ -598,7 +706,7 @@ TSharedRef<SWidget> SPlayKitSettingsWindow::BuildAdvancedSection()
 				.Text_Lambda([this]() {
 					return Settings ? FText::FromString(Settings->CustomBaseUrl) : FText::GetEmpty();
 				})
-				.HintText(LOCTEXT("BaseUrlHint", "https://playkit.ai"))
+				.HintText(LOCTEXT("BaseUrlHint", "https://api.playkit.ai"))
 				.OnTextCommitted_Lambda([this](const FText& NewText, ETextCommit::Type CommitType)
 				{
 					if (Settings)
@@ -662,7 +770,6 @@ TSharedRef<SWidget> SPlayKitSettingsWindow::BuildAdvancedSection()
 					if (Settings)
 					{
 						Settings->bEnableDebugLogging = (NewState == ECheckBoxState::Checked);
-						UE_LOG(LogTemp, Log, TEXT("NewState = %hs"), Settings->bEnableDebugLogging ? "True" : "False");
 						Settings->SaveSettings();
 					}
 				})
@@ -745,7 +852,7 @@ TSharedRef<SWidget> SPlayKitSettingsWindow::BuildAboutSection()
 			.Text(LOCTEXT("WebsiteButton", "Website"))
 			.OnClicked_Lambda([]()
 			{
-				FPlatformProcess::LaunchURL(TEXT("https://playkit.ai"), nullptr, nullptr);
+				FPlatformProcess::LaunchURL(TEXT("https://api.playkit.ai"), nullptr, nullptr);
 				return FReply::Handled();
 			})
 		]
@@ -1375,6 +1482,8 @@ void SPlayKitSettingsWindow::HandleModelsResponse(FHttpRequestPtr Request, FHttp
 	bIsLoadingModels = false;
 	ChatModelOptions.Empty();
 	ImageModelOptions.Empty();
+	TranscriptionModelOptions.Empty();
+	Model3DOptions.Empty();
 
 	if (!bWasSuccessful || !Response.IsValid())
 	{
@@ -1423,15 +1532,26 @@ void SPlayKitSettingsWindow::HandleModelsResponse(FHttpRequestPtr Request, FHttp
 				{
 					ImageModelOptions.Add(MakeShared<FString>(ModelId));
 				}
+				else if (ModelType == TEXT("transcription"))
+				{
+					TranscriptionModelOptions.Add(MakeShared<FString>(ModelId));
+				}
+				else if (ModelType == TEXT("3d"))
+				{
+					Model3DOptions.Add(MakeShared<FString>(ModelId));
+				}
 			}
 		}
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("[PlayKit] Loaded %d chat models, %d image models"), ChatModelOptions.Num(), ImageModelOptions.Num());
+	UE_LOG(LogTemp, Log, TEXT("[PlayKit] Loaded %d chat, %d image, %d transcription, %d 3D models"), 
+		ChatModelOptions.Num(), ImageModelOptions.Num(), TranscriptionModelOptions.Num(), Model3DOptions.Num());
 
 	// Find and set initial selected items based on Settings
 	SelectedChatModel = nullptr;
 	SelectedImageModel = nullptr;
+	SelectedTranscriptionModel = nullptr;
+	Selected3DModel = nullptr;
 
 	if (Settings)
 	{
@@ -1454,6 +1574,26 @@ void SPlayKitSettingsWindow::HandleModelsResponse(FHttpRequestPtr Request, FHttp
 				break;
 			}
 		}
+
+		// Find matching transcription model
+		for (const TSharedPtr<FString>& Option : TranscriptionModelOptions)
+		{
+			if (Option.IsValid() && *Option == Settings->DefaultTranscriptionModel)
+			{
+				SelectedTranscriptionModel = Option;
+				break;
+			}
+		}
+
+		// Find matching 3D model
+		for (const TSharedPtr<FString>& Option : Model3DOptions)
+		{
+			if (Option.IsValid() && *Option == Settings->Default3DModel)
+			{
+				Selected3DModel = Option;
+				break;
+			}
+		}
 	}
 
 	// Refresh and sync combo boxes
@@ -1471,6 +1611,22 @@ void SPlayKitSettingsWindow::HandleModelsResponse(FHttpRequestPtr Request, FHttp
 		if (SelectedImageModel.IsValid())
 		{
 			ImageModelComboBox->SetSelectedItem(SelectedImageModel);
+		}
+	}
+	if (TranscriptionModelComboBox.IsValid())
+	{
+		TranscriptionModelComboBox->RefreshOptions();
+		if (SelectedTranscriptionModel.IsValid())
+		{
+			TranscriptionModelComboBox->SetSelectedItem(SelectedTranscriptionModel);
+		}
+	}
+	if (Model3DComboBox.IsValid())
+	{
+		Model3DComboBox->RefreshOptions();
+		if (Selected3DModel.IsValid())
+		{
+			Model3DComboBox->SetSelectedItem(Selected3DModel);
 		}
 	}
 }

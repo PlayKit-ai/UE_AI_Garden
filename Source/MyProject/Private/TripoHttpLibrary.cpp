@@ -1,4 +1,4 @@
-﻿#include "TripoHttpLibrary.h"
+#include "TripoHttpLibrary.h"
 #include "Misc/FileHelper.h"
 #include "HttpModule.h"
 #include "Interfaces/IHttpResponse.h"
